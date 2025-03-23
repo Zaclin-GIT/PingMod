@@ -71,8 +71,10 @@ namespace PingMod
                 bool flag = this.mainCamera != null;
                 if (flag)
                 {
-                    base.transform.rotation = Quaternion.Euler(this.mainCamera.transform.eulerAngles.x, this.mainCamera.transform.eulerAngles.y, 0f);
-                    base.transform.position = base.transform.parent.position;
+                    Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+                    directionToCamera.y = 0; // Keep upright if needed (optional)
+
+                    transform.rotation = Quaternion.LookRotation(directionToCamera);
                 }
             }
         }
