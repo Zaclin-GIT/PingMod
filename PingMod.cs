@@ -1,7 +1,8 @@
-﻿using BepInEx;
+﻿using System.IO;
+using System.Reflection;
+using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
-using Unity.VisualScripting;
 using UnityEngine;
 using Unity;
 using ExitGames.Client.Photon;
@@ -21,7 +22,7 @@ public class PingMod : BaseUnityPlugin
     private float pingLifetime = 5f;
     private GameObject pingObject;
     public static NetworkedEvent PingEvent;
-
+    private AssetBundle pingAsset;
 
     private void Awake()
     {
@@ -36,6 +37,17 @@ public class PingMod : BaseUnityPlugin
         Patch();
 
         Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
+        this.LoadBundle();
+    }
+
+
+    private void LoadBundle()
+    {
+        string text = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Assets");
+        pingAsset = AssetBundle.LoadFromFile(text);
+        GameObject pingObj = pingAsset.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/pingmodassetbundle.pingprefab");
+        // GameObject val3 = val.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/FancyWaterBottle.prefab");
+        // GameObject val4 = val.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/InsulatedWaterBottle.prefab");
     }
 
     internal void Patch()
