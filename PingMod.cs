@@ -51,7 +51,6 @@ public class PingMod : BaseUnityPlugin
 
     void Update()
     {
-        // if (Input.GetKeyDown(KeyCode.P))
         if (Input.GetKeyDown(KeyCode.Mouse2))
         {
             AttemptPing();
@@ -60,9 +59,7 @@ public class PingMod : BaseUnityPlugin
 
     private void EmitPing(EventData eventData)
     {
-        // Logger.LogInfo("Entered EmitPing");
         Vector3 position = (Vector3)eventData.CustomData;
-        // Logger.LogInfo(eventData.customData);
         if (pingObject != null)
         {
             GameObject ping = Instantiate(pingObject, position, Quaternion.identity);
@@ -86,7 +83,7 @@ public class PingMod : BaseUnityPlugin
         if (cam == null) return;
 
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
-        //Walls - Cart - Doors
+        // NOTE: Walls - Cart - Doors
         int layerMask = LayerMask.GetMask("Default", "PhysGrabObjectCart", "PhysGrabObjectHinge", "PhysGrabObject");
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, layerMask))
         {
