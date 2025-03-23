@@ -43,9 +43,9 @@ public class PingMod : BaseUnityPlugin
 
     private void LoadBundle()
     {
-        string text = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Assets");
+        string text = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "pingmodassetbundle");
         pingAsset = AssetBundle.LoadFromFile(text);
-        GameObject pingObj = pingAsset.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/pingmodassetbundle.pingprefab");
+        GameObject pingObj = pingAsset.LoadAsset<GameObject>("PingImagePrefab");
         // GameObject val3 = val.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/FancyWaterBottle.prefab");
         // GameObject val4 = val.LoadAsset<GameObject>("Assets/REPO/Mods/plugins/InsulatedWaterBottle.prefab");
     }
