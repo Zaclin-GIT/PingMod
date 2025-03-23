@@ -14,7 +14,6 @@ public class MyRepoMod : BaseUnityPlugin
     private ManualLogSource _logger => base.Logger;
     internal Harmony? Harmony { get; set; }
 
-    public GameObject pingPrefab; // Assign in Unity inspector or load dynamically
     private float pingLifetime = 5f;
 
     private void Awake()
@@ -58,7 +57,6 @@ public class MyRepoMod : BaseUnityPlugin
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             GameObject ping = Instantiate(new GameObject(), hit.point, Quaternion.identity);
-            Debug.Log("Hit Position: " + hit.point);
             ping.AddComponent<PingObject>();
             Destroy(ping, pingLifetime);
         }

@@ -3,98 +3,68 @@ using System.Xml.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static ES3;
+using UnityEngine.UIElements;
 
 namespace REPO_MOD
 {
-    // Token: 0x02000006 RID: 6
     public class PingObject : MonoBehaviour
     {
-        // Token: 0x06000012 RID: 18 RVA: 0x0000260F File Offset: 0x0000080F
+        public Vector2 imageSize = new Vector2(100, 100);
+
         private void Awake()
         {
             this.InitializeCanvas();
         }
 
-        // Token: 0x06000015 RID: 21 RVA: 0x000026A9 File Offset: 0x000008A9
-        private void DestroyPingObject()
-        {
-            this.canvas.gameObject.SetActive(false);
-        }
-
-        // Token: 0x06000016 RID: 22 RVA: 0x000026C8 File Offset: 0x000008C8
         private void InitializeCanvas()
         {
-            GameObject gameObject = new GameObject("PingCanvas");
-            this.canvas = gameObject.AddComponent<Canvas>();
-            this.canvas.renderMode = (RenderMode)2;
-            this.canvas.transform.SetParent(base.transform);
-            this.canvas.transform.localPosition = this.worldOffset;
-            RectTransform component = this.canvas.GetComponent<RectTransform>();
-            component.sizeDelta = this.size;
-            component.localScale = new Vector3(0.03f, 0.03f, 0.03f);
-            gameObject.AddComponent<GraphicRaycaster>();
-            this.background = this.CreatePingElement(base.transform, this.backgroundColor, "Background");
-            this.foreground.type = (Image.Type)3;
-            this.foreground.fillMethod = 0;
-            this.foreground.fillOrigin = 0;
-            PingObject.Billboard billboard = gameObject.AddComponent<PingObject.Billboard>();
-            billboard.offset = this.worldOffset;
+            // Create a new Canvas
+            GameObject canvasObj = new GameObject("WorldSpaceCanvas");
+            canvasObj.transform.SetParent(this.gameObject.transform);
+            Canvas canvas = canvasObj.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.dynamicPixelsPerUnit = 10;
+            canvasObj.AddComponent<GraphicRaycaster>();
+
+            // Set the canvas position and rotation
+            canvasObj.transform.position = this.gameObject.transform.position;
+
+            // Create an Image object as a child of the canvas
+            GameObject imageObj = new GameObject("Image");
+            imageObj.transform.SetParent(canvasObj.transform);
+
+            // Add the Image component and set its sprite
+            UnityEngine.UI.Image image = imageObj.AddComponent<UnityEngine.UI.Image>();
+            image.sprite = CreateWhiteSprite(1000, 1000);
+            image.rectTransform.sizeDelta = imageSize;
+
+            // Adjust the image position and size within the canvas
+            RectTransform rectTransform = image.GetComponent<RectTransform>();
+            rectTransform.localPosition = Vector3.zero;
+            rectTransform.localRotation = Quaternion.identity;
+            rectTransform.localScale = Vector3.one * 0.01f;  // Scale down for world space
         }
 
-        private Image CreatePingElement(Transform pos, Color color, string name)
+        public Sprite CreateWhiteSprite(int width, int height)
         {
-            GameObject gameObject = new GameObject(name);
-            gameObject.transform.SetParent(this.gameObject.transform);
-            Texture2D texture2D = new Texture2D(1, 1);
-            texture2D.SetPixel(0, 0, Color.white);
-            texture2D.Apply();
-            Image image = gameObject.AddComponent<Image>();
-            image.sprite = Sprite.Create(texture2D, new Rect(0f, 0f, 1f, 1f), Vector2.zero);
-            image.color = color;
-            RectTransform component = gameObject.GetComponent<RectTransform>();
-            component.anchorMin = Vector2.zero;
-            component.anchorMax = Vector2.one;
-            component.offsetMin = Vector2.zero;
-            component.offsetMax = Vector2.zero;
-            return image;
-        }
+            // Create a new blank texture
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
 
-        private void OnDestroy()
-        {
-            bool flag = this.canvas != null;
-            if (flag)
+            // Fill the texture with white pixels
+            Color whiteColor = Color.white;  // Solid white
+            Color[] pixels = new Color[width * height];
+            for (int i = 0; i < pixels.Length; i++)
             {
-                UnityEngine.Object.Destroy(this.canvas.gameObject);
-            }
-        }
-
-        public Vector3 worldOffset = new Vector3(0f, 2.5f, 0f);
-        public Vector2 size = new Vector2(20f, 2.5f);
-        public Color backgroundColor = new Color(0.3f, 0.3f, 0.3f, 0.9f);
-        public Color healthColor = Color.red;
-        public Canvas canvas;
-        private Image foreground;
-        private Image background;
-
-        public class Billboard : MonoBehaviour
-        {
-            private void Start()
-            {
-                this.mainCamera = Camera.main;
+                pixels[i] = whiteColor;
             }
 
-            private void LateUpdate()
-            {
-                bool flag = this.mainCamera != null;
-                if (flag)
-                {
-                    base.transform.rotation = Quaternion.Euler(this.mainCamera.transform.eulerAngles.x, this.mainCamera.transform.eulerAngles.y, 0f);
-                    base.transform.position = base.transform.parent.position + this.offset;
-                }
-            }
+            texture.SetPixels(pixels);
+            texture.Apply();
 
-            public Vector3 offset;
-            private Camera mainCamera;
+            // Create a new sprite from the texture
+            return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
         }
     }
 }
