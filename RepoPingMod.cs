@@ -5,12 +5,12 @@ using REPO_MOD;
 using Unity.VisualScripting;
 using UnityEngine;
 
-namespace MyRepoMod;
+namespace PingMod;
 
 [BepInPlugin("Zaclin.PingMod", "PingMod", "0.01")]
-public class MyRepoMod : BaseUnityPlugin
+public class PingMod : BaseUnityPlugin
 {
-    internal static MyRepoMod Instance { get; private set; } = null!;
+    internal static PingMod Instance { get; private set; } = null!;
     internal new static ManualLogSource Logger => Instance._logger;
     private ManualLogSource _logger => base.Logger;
     internal Harmony? Harmony { get; set; }
@@ -21,7 +21,7 @@ public class MyRepoMod : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
-        
+
         // Prevent the plugin from being deleted
         this.gameObject.transform.parent = null;
         this.gameObject.hideFlags = HideFlags.HideAndDontSave;
@@ -58,7 +58,7 @@ public class MyRepoMod : BaseUnityPlugin
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            if(pingObject != null)
+            if (pingObject != null)
             {
                 GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
                 ping.AddComponent<PingObject>();
