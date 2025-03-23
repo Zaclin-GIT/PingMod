@@ -3,6 +3,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 using Unity.VisualScripting;
 using UnityEngine;
+using Unity;
 
 namespace PingMod;
 
@@ -55,18 +56,22 @@ public class PingMod : BaseUnityPlugin
         if (cam == null) return;
 
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit))
+        //Walls - Cart - Doors
+        int layerMask = LayerMask.GetMask("Default", "PhysGrabObjectCart", "PhysGrabObjectHinge", "PhysGrabObject");
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, layerMask))
         {
+
+            Vector3 spawnPosition = hit.point + hit.normal * 0.1f;
             if (pingObject != null)
             {
-                GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
+                GameObject ping = Instantiate(pingObject, spawnPosition, Quaternion.identity);
                 ping.AddComponent<PingObject>();
                 Destroy(ping, pingLifetime);
             }
             else
             {
                 pingObject = Instantiate(new GameObject("Ping Object"));
-                GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
+                GameObject ping = Instantiate(pingObject, spawnPosition, Quaternion.identity);
                 ping.AddComponent<PingObject>();
                 Destroy(ping, pingLifetime);
             }

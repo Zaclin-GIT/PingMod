@@ -24,6 +24,7 @@ namespace PingMod
             canvasObj.transform.SetParent(this.gameObject.transform);
             Canvas canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
+            canvas.sortingOrder = 100;
             CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
             scaler.dynamicPixelsPerUnit = 10;
             canvasObj.AddComponent<GraphicRaycaster>();
@@ -46,6 +47,7 @@ namespace PingMod
             rectTransform.localRotation = Quaternion.identity;
             rectTransform.localScale = Vector3.one * 0.01f;  // Scale down for world space
 
+
             PingObject.Billboard billboard = canvasObj.AddComponent<PingObject.Billboard>();
         }
 
@@ -59,7 +61,7 @@ namespace PingMod
         }
         public class Billboard : MonoBehaviour
         {
-            public Vector3 offset;
+            public Vector3 offset = new Vector3(0, 0, 10);
             private Camera mainCamera;
             private void Awake()
             {
@@ -75,6 +77,10 @@ namespace PingMod
                     directionToCamera.y = 0; // Keep upright if needed (optional)
 
                     transform.rotation = Quaternion.LookRotation(directionToCamera);
+
+                    // Maintain offset from parent
+                    // transform.position = transform.parent != null ? transform.parent.position + offset : transform.position + offset;
+                    base.transform.position = base.transform.parent.position;
                 }
             }
         }

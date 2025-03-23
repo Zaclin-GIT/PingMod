@@ -78,3 +78,5 @@ crashlytics-build.properties
 /bin/*
 /obj/*
 .cspell.json
+build.ps1
+build.bat
