@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using static ES3;
 using UnityEngine.UIElements;
 
-namespace REPO_MOD
+namespace PingMod
 {
     public class PingObject : MonoBehaviour
     {
