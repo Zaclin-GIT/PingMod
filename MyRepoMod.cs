@@ -15,6 +15,7 @@ public class MyRepoMod : BaseUnityPlugin
     internal Harmony? Harmony { get; set; }
 
     private float pingLifetime = 5f;
+    private GameObject pingObject;
 
     private void Awake()
     {
@@ -42,7 +43,7 @@ public class MyRepoMod : BaseUnityPlugin
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.P)) // Change key as needed
+        if (Input.GetKeyDown(KeyCode.P))
         {
             CreatePing();
         }
@@ -56,9 +57,21 @@ public class MyRepoMod : BaseUnityPlugin
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            GameObject ping = Instantiate(new GameObject(), hit.point, Quaternion.identity);
-            ping.AddComponent<PingObject>();
-            Destroy(ping, pingLifetime);
+            if(pingObject != null)
+            {
+                GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
+                ping.AddComponent<PingObject>();
+                Destroy(ping, pingLifetime);
+                Debug.Log("Yeet");
+            }
+            else
+            {
+                pingObject = Instantiate(new GameObject("Ping Object"));
+                GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
+                ping.AddComponent<PingObject>();
+                Destroy(ping, pingLifetime);
+                Debug.Log("Yeet2");
+            }
         }
     }
 }

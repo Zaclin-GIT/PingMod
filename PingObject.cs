@@ -52,17 +52,6 @@ namespace REPO_MOD
             // Create a new blank texture
             Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
 
-            // Fill the texture with white pixels
-            Color whiteColor = Color.white;  // Solid white
-            Color[] pixels = new Color[width * height];
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = whiteColor;
-            }
-
-            texture.SetPixels(pixels);
-            texture.Apply();
-
             // Create a new sprite from the texture
             return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
         }
