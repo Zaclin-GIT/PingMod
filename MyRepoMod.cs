@@ -2,6 +2,7 @@
 using BepInEx.Logging;
 using HarmonyLib;
 using REPO_MOD;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace MyRepoMod;
@@ -62,7 +63,6 @@ public class MyRepoMod : BaseUnityPlugin
                 GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
                 ping.AddComponent<PingObject>();
                 Destroy(ping, pingLifetime);
-                Debug.Log("Yeet");
             }
             else
             {
@@ -70,7 +70,6 @@ public class MyRepoMod : BaseUnityPlugin
                 GameObject ping = Instantiate(pingObject, hit.point, Quaternion.identity);
                 ping.AddComponent<PingObject>();
                 Destroy(ping, pingLifetime);
-                Debug.Log("Yeet2");
             }
         }
     }

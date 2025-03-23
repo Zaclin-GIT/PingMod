@@ -45,6 +45,8 @@ namespace REPO_MOD
             rectTransform.localPosition = Vector3.zero;
             rectTransform.localRotation = Quaternion.identity;
             rectTransform.localScale = Vector3.one * 0.01f;  // Scale down for world space
+
+            PingObject.Billboard billboard = canvasObj.AddComponent<PingObject.Billboard>();
         }
 
         public Sprite CreateWhiteSprite(int width, int height)
@@ -54,6 +56,25 @@ namespace REPO_MOD
 
             // Create a new sprite from the texture
             return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+        }
+        public class Billboard : MonoBehaviour
+        {
+            public Vector3 offset;
+            private Camera mainCamera;
+            private void Awake()
+            {
+                this.mainCamera = Camera.main;
+            }
+
+            private void LateUpdate()
+            {
+                bool flag = this.mainCamera != null;
+                if (flag)
+                {
+                    base.transform.rotation = Quaternion.Euler(this.mainCamera.transform.eulerAngles.x, this.mainCamera.transform.eulerAngles.y, 0f);
+                    base.transform.position = base.transform.parent.position;
+                }
+            }
         }
     }
 }
