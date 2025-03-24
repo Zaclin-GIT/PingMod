@@ -39,6 +39,8 @@ public class PingMod : BaseUnityPlugin
 
         this.cachedPingSprite = CreateLocationSprite();
 
+        // this.pingOverlayLayer = LayerMask.NameToLayer("31");
+
         Patch();
 
         Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
@@ -46,8 +48,6 @@ public class PingMod : BaseUnityPlugin
 
     private void Start()
     {
-        this.overlayCameraObj = new GameObject("OverlayCameraObject");
-        this.CreateOverlayCamera();
     }
 
     internal void Patch()
@@ -72,9 +72,15 @@ public class PingMod : BaseUnityPlugin
 
     void LateUpdate()
     {
+
+        if (this.overlayCameraObj == null)
+        {
+            // this.overlayCameraObj = new GameObject("OverlayCameraObject");
+            this.overlayCameraObj = new GameObject("OverlayCameraObject");
+            this.CreateOverlayCamera();
+        }
         if (_pingQueue.Count > 0)
         {
-
             lock (_pingQueue)
             {
                 while (_pingQueue.Count > 0)
@@ -95,24 +101,24 @@ public class PingMod : BaseUnityPlugin
         return Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime") != null;
     }
 
-    private GameObject CreateOverlayCamera()
+    private void CreateOverlayCamera()
     {
-        // GameObject camObj = new GameObject("PingOverlayCamera");
-
         Camera overlayCamera = this.overlayCameraObj.AddComponent<Camera>();
+
+        overlayCamera.CopyFrom(Camera.main);
+
+        this.overlayCameraObj.transform.position = Camera.main.transform.position;
+        this.overlayCameraObj.transform.rotation = Camera.main.transform.rotation;
         overlayCamera.transform.SetParent(Camera.main.transform);
 
         overlayCamera.clearFlags = CameraClearFlags.Depth; // Prevents background clearing
-        overlayCamera.cullingMask = 1 << this.pingOverlayLayer; // Render ONLY the ping layer
-        overlayCamera.depth = Camera.main.depth + 1; // Renders above the main camera
+        overlayCamera.cullingMask = (1 << this.pingOverlayLayer); // Render ONLY the ping layer
+        overlayCamera.depth = 10; // Renders above the main camera
         overlayCamera.allowHDR = false;
         overlayCamera.allowMSAA = false;
 
         // Ensure main camera does NOT render the Ping Layer
         Camera.main.cullingMask &= ~(1 << this.pingOverlayLayer);
-
-        Logger.LogInfo($"Overlay Camera created with depth {overlayCamera.depth}. Ping Layer: {this.pingOverlayLayer}");
-        return camObj;
     }
 
     private void CreatePing(GameObject canvasObj)
@@ -260,7 +266,7 @@ public class PingMod : BaseUnityPlugin
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         int layerMask = LayerMask.GetMask("Default", "PhysGrabObjectCart", "PhysGrabObjectHinge", "PhysGrabObject");
 
-        float maxDistance = 75f;
+        float maxDistance = 25f;
         if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, layerMask))
         {
             Vector3 spawnPosition = hit.point + hit.normal * 0.14f;
