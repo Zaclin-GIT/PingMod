@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -26,8 +27,8 @@ public class PingMod : BaseUnityPlugin
     public static NetworkedEvent? PingEvent;
     private int pingOverlayLayer = 31;
     private GameObject? overlayCameraObj;
-    private float pingCoolDown = 1f;
-    private int CoolDownStart = 0;
+    private readonly float pingCoolDown = 1f;
+    private bool onCoolDown = false;
 
     private readonly Queue<Vector3> _pingQueue = new Queue<Vector3>();
 
@@ -41,8 +42,6 @@ public class PingMod : BaseUnityPlugin
         this.gameObject.hideFlags = HideFlags.HideAndDontSave;
 
         this.cachedPingSprite = CreateLocationSprite();
-
-        // this.pingOverlayLayer = LayerMask.NameToLayer("31");
 
         Patch();
 
@@ -66,12 +65,14 @@ public class PingMod : BaseUnityPlugin
 
     void Update()
     {
-        Logger.LogInfo($"HotKey Clicked: {Input.GetKeyDown(KeyCode.Mouse2)} | Player Health Greater than 0: {PlayerPatcher.localPlayer.playerHealth.health > 0} | CoolDown over: {(DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown}");
-        if (Input.GetKeyDown(KeyCode.Mouse2) && PlayerPatcher.localPlayer.playerHealth.health > 0 && (DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown)
+        // Logger.LogInfo($"HotKey Clicked: {Input.GetKeyDown(KeyCode.Mouse2)} | Player Health Greater than 0: {PlayerPatcher.localPlayer.playerHealth.health > 0} | CoolDown over: {(DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown}");
+        if (Input.GetKeyDown(KeyCode.Mouse2) && PlayerPatcher.localPlayer.playerHealth.health > 0 && !this.onCoolDown)
         {
-            this.AttemptPing();
-            this.CoolDownStart = DateTime.UtcNow.Second;
-            Logger.LogInfo(this.CoolDownStart);
+            if (this.AttemptPing())
+            {
+                this.onCoolDown = true;
+                Task.Delay(TimeSpan.FromSeconds(this.pingCoolDown)).ContinueWith(task => this.onCoolDown = false);
+            }
         }
     }
 
@@ -100,10 +101,6 @@ public class PingMod : BaseUnityPlugin
                 }
             }
         }
-    }
-    private bool IsURP()
-    {
-        return Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime") != null;
     }
 
     private void CreateOverlayCamera()
@@ -151,12 +148,6 @@ public class PingMod : BaseUnityPlugin
         // Billboard effect
         canvasObj.AddComponent<Billboard>();
     }
-
-
-
-
-
-
 
     public Sprite CreateLocationSprite()
     {
@@ -262,10 +253,10 @@ public class PingMod : BaseUnityPlugin
     }
 
 
-    void AttemptPing()
+    private bool AttemptPing()
     {
         Camera cam = Camera.main;
-        if (cam == null) return;
+        if (cam == null) return false;
 
 
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
@@ -279,14 +270,14 @@ public class PingMod : BaseUnityPlugin
                 Logger.LogError("Ping Event Network Event is null");
             else
                 PingEvent.RaiseEvent(spawnPosition, REPOLib.Modules.NetworkingEvents.RaiseAll, SendOptions.SendReliable);
+            return true;
         }
         else
         {
             Logger.LogWarning("Ping raycast did not hit anything.");
         }
+        return false;
     }
-
-
 
     [HarmonyPatch]
     public static class PlayerPatcher
