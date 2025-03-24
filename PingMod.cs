@@ -26,6 +26,9 @@ public class PingMod : BaseUnityPlugin
     public static NetworkedEvent? PingEvent;
     private int pingOverlayLayer = 31;
     private GameObject? overlayCameraObj;
+    private float pingCoolDown = 1f;
+    private int CoolDownStart = 0;
+
     private readonly Queue<Vector3> _pingQueue = new Queue<Vector3>();
 
     private void Awake()
@@ -63,16 +66,16 @@ public class PingMod : BaseUnityPlugin
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Mouse2))
+        if (Input.GetKeyDown(KeyCode.Mouse2) && PlayerPatcher.localPlayer.playerHealth.health > 0 && (DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown)
         {
             this.AttemptPing();
+            this.CoolDownStart = DateTime.UtcNow.Second;
         }
     }
 
 
     void LateUpdate()
     {
-
         if (this.overlayCameraObj == null)
         {
             // this.overlayCameraObj = new GameObject("OverlayCameraObject");
@@ -280,4 +283,38 @@ public class PingMod : BaseUnityPlugin
             Logger.LogWarning("Ping raycast did not hit anything.");
         }
     }
+
+
+
+    [HarmonyPatch]
+    public static class PlayerPatcher
+    {
+        internal static PlayerAvatar localPlayer;
+
+        [HarmonyPatch(typeof(PlayerAvatar), "Awake")]
+        [HarmonyPostfix]
+        public static void InitPlayer(ref bool ___isLocal, PlayerAvatar __instance)
+        {
+            if (___isLocal)
+            {
+                Logger.LogInfo("FOUND LOCAL PLAYER");
+                localPlayer = __instance;
+            }
+        }
+
+        [HarmonyPatch(typeof(RoundDirector), "StartRoundLogic")]
+        [HarmonyPrefix]
+        public static void BeforeStartOfRound(int value, RoundDirector __instance)
+        {
+
+        }
+    }
+
 }
+
+
+
+
+
+
+
