@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -23,6 +24,8 @@ public class PingMod : BaseUnityPlugin
     public int PingResolution = 1024;
     public Sprite? cachedPingSprite;
     public static NetworkedEvent? PingEvent;
+    private int pingOverlayLayer = 31;
+    private GameObject? overlayCameraObj;
     private readonly Queue<Vector3> _pingQueue = new Queue<Vector3>();
 
     private void Awake()
@@ -41,6 +44,11 @@ public class PingMod : BaseUnityPlugin
         Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
     }
 
+    private void Start()
+    {
+        this.overlayCameraObj = new GameObject("OverlayCameraObject");
+        this.CreateOverlayCamera();
+    }
 
     internal void Patch()
     {
@@ -61,10 +69,12 @@ public class PingMod : BaseUnityPlugin
         }
     }
 
+
     void LateUpdate()
     {
         if (_pingQueue.Count > 0)
         {
+
             lock (_pingQueue)
             {
                 while (_pingQueue.Count > 0)
@@ -72,12 +82,37 @@ public class PingMod : BaseUnityPlugin
                     Vector3 position = _pingQueue.Dequeue();
 
                     GameObject canvasObj = new GameObject("PingObject");
+                    canvasObj.layer = this.pingOverlayLayer;
                     canvasObj.transform.position = position;
                     this.CreatePing(canvasObj);
                     Destroy(canvasObj, pingLifetime);
                 }
             }
         }
+    }
+    private bool IsURP()
+    {
+        return Type.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime") != null;
+    }
+
+    private GameObject CreateOverlayCamera()
+    {
+        // GameObject camObj = new GameObject("PingOverlayCamera");
+
+        Camera overlayCamera = this.overlayCameraObj.AddComponent<Camera>();
+        overlayCamera.transform.SetParent(Camera.main.transform);
+
+        overlayCamera.clearFlags = CameraClearFlags.Depth; // Prevents background clearing
+        overlayCamera.cullingMask = 1 << this.pingOverlayLayer; // Render ONLY the ping layer
+        overlayCamera.depth = Camera.main.depth + 1; // Renders above the main camera
+        overlayCamera.allowHDR = false;
+        overlayCamera.allowMSAA = false;
+
+        // Ensure main camera does NOT render the Ping Layer
+        Camera.main.cullingMask &= ~(1 << this.pingOverlayLayer);
+
+        Logger.LogInfo($"Overlay Camera created with depth {overlayCamera.depth}. Ping Layer: {this.pingOverlayLayer}");
+        return camObj;
     }
 
     private void CreatePing(GameObject canvasObj)
@@ -105,6 +140,11 @@ public class PingMod : BaseUnityPlugin
         // Billboard effect
         canvasObj.AddComponent<Billboard>();
     }
+
+
+
+
+
 
 
     public Sprite CreateLocationSprite()
@@ -203,6 +243,7 @@ public class PingMod : BaseUnityPlugin
 
         Vector3 position = (Vector3)eventData.CustomData;
 
+
         lock (_pingQueue)
         {
             _pingQueue.Enqueue(position);
@@ -214,6 +255,7 @@ public class PingMod : BaseUnityPlugin
     {
         Camera cam = Camera.main;
         if (cam == null) return;
+
 
         Ray ray = new Ray(cam.transform.position, cam.transform.forward);
         int layerMask = LayerMask.GetMask("Default", "PhysGrabObjectCart", "PhysGrabObjectHinge", "PhysGrabObject");
