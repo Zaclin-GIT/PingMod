@@ -66,10 +66,12 @@ public class PingMod : BaseUnityPlugin
 
     void Update()
     {
+        Logger.LogInfo($"HotKey Clicked: {Input.GetKeyDown(KeyCode.Mouse2)} | Player Health Greater than 0: {PlayerPatcher.localPlayer.playerHealth.health > 0} | CoolDown over: {(DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown}");
         if (Input.GetKeyDown(KeyCode.Mouse2) && PlayerPatcher.localPlayer.playerHealth.health > 0 && (DateTime.UtcNow.Second - this.CoolDownStart) > this.pingCoolDown)
         {
             this.AttemptPing();
             this.CoolDownStart = DateTime.UtcNow.Second;
+            Logger.LogInfo(this.CoolDownStart);
         }
     }
 
