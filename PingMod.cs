@@ -29,12 +29,15 @@ public class PingMod : BaseUnityPlugin
     private GameObject? overlayCameraObj;
     private readonly float pingCoolDown = 1f;
     private bool onCoolDown = false;
+    public Color pingColor = Color.white;
+
 
     private readonly Queue<Vector3> _pingQueue = new Queue<Vector3>();
 
     private void Awake()
     {
         Instance = this;
+        PlayerPatcher.plugin = Instance;
 
         PingEvent = new NetworkedEvent("Global Ping Event", this.EmitPing);
         // Prevent the plugin from being deleted
@@ -149,13 +152,15 @@ public class PingMod : BaseUnityPlugin
         canvasObj.AddComponent<Billboard>();
     }
 
+
     public Sprite CreateLocationSprite()
     {
         int width = this.PingResolution;
         int height = this.PingResolution;
         Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
         Color transparent = new Color(0, 0, 0, 0);
-        Color fillColor = Color.white;
+        Color fillColor = this.pingColor;
+        Color outlineColor = Color.white;
 
         // Clear texture
         Color[] clearPixels = new Color[width * height];
@@ -166,23 +171,24 @@ public class PingMod : BaseUnityPlugin
         int centerX = width / 2;
         int centerY = (int)(height * 0.65f);
         int outerRadius = (int)(width * 0.25f);
-        int innerRadius = (int)(outerRadius * 0.4f); // The hole size
+        int innerRadius = (int)(outerRadius * 0.4f);
+        int outlineThickness = 3;
 
-        // Circle Drawing
-        int minX = centerX - outerRadius;
-        int maxX = centerX + outerRadius;
-        int minY = centerY - outerRadius;
-        int maxY = centerY + outerRadius;
-
-        for (int x = minX; x <= maxX; x++)
+        // Draw Circle with Outline
+        for (int x = centerX - outerRadius - outlineThickness; x <= centerX + outerRadius + outlineThickness; x++)
         {
-            for (int y = minY; y <= maxY; y++)
+            for (int y = centerY - outerRadius - outlineThickness; y <= centerY + outerRadius + outlineThickness; y++)
             {
                 int dx = x - centerX;
                 int dy = y - centerY;
                 int distSq = dx * dx + dy * dy;
 
-                if (distSq <= outerRadius * outerRadius && distSq > innerRadius * innerRadius)
+                if (distSq <= (outerRadius + outlineThickness) * (outerRadius + outlineThickness) &&
+                    distSq > (outerRadius - outlineThickness) * (outerRadius - outlineThickness))
+                {
+                    texture.SetPixel(x, y, outlineColor);
+                }
+                else if (distSq <= outerRadius * outerRadius && distSq > innerRadius * innerRadius)
                 {
                     texture.SetPixel(x, y, fillColor);
                 }
@@ -193,21 +199,36 @@ public class PingMod : BaseUnityPlugin
         int tailWidth = (int)(width * 0.2f);
         int tailHeight = (int)(height * 0.3f);
         int tailBottomY = (int)(height * 0.15f);
+        // int tailTopY = centerY - outerRadius + 1; // The point where the tail meets the circle
         int tailTopY = (int)(height * 0.55f);
 
-        //Tail Drawing
-        int tailMinX = centerX - tailWidth / 2;
-        int tailMaxX = centerX + tailWidth / 2;
-
-        for (int y = tailBottomY; y < tailTopY; y++)
+        // Tail Drawing with Outline (Stopping at the Circle)
+        for (int y = tailBottomY - outlineThickness; y < tailTopY; y++)
         {
             float slope = (float)(y - tailBottomY) / (tailTopY - tailBottomY);
             int minXAtY = (int)(centerX - (slope * (tailWidth / 2)));
             int maxXAtY = (int)(centerX + (slope * (tailWidth / 2)));
 
-            for (int x = minXAtY; x <= maxXAtY; x++)
+            int outlineMinX = minXAtY - outlineThickness;
+            int outlineMaxX = maxXAtY + outlineThickness;
+
+            for (int x = outlineMinX; x <= outlineMaxX; x++)
             {
-                texture.SetPixel(x, y, fillColor);
+                int dx = x - centerX;
+                int dy = y - centerY;
+                int distSq = dx * dx + dy * dy;
+
+                bool insideCircle = distSq <= outerRadius * outerRadius;
+                bool isOutline = (x < minXAtY || x > maxXAtY) && y < tailTopY - outlineThickness;
+
+                if (isOutline && !insideCircle)
+                {
+                    texture.SetPixel(x, y, outlineColor); // Outline slanted edges + bottom (stopping at the circle)
+                }
+                else if (x >= minXAtY && x <= maxXAtY)
+                {
+                    texture.SetPixel(x, y, fillColor); // Fill the tail
+                }
             }
         }
 
@@ -283,6 +304,9 @@ public class PingMod : BaseUnityPlugin
     public static class PlayerPatcher
     {
         internal static PlayerAvatar localPlayer;
+        internal static PingMod plugin;
+
+
 
         [HarmonyPatch(typeof(PlayerAvatar), "Awake")]
         [HarmonyPostfix]
@@ -300,6 +324,14 @@ public class PingMod : BaseUnityPlugin
         public static void BeforeStartOfRound(int value, RoundDirector __instance)
         {
 
+        }
+
+        [HarmonyPatch(typeof(PlayerAvatarVisuals), "SetColor")]
+        [HarmonyPostfix]
+        public static void SetColor(PlayerAvatarVisuals __instance, int _colorIndex, Color _setColor)
+        {
+            plugin.pingColor = __instance.color;
+            plugin.cachedPingSprite = plugin.CreateLocationSprite();
         }
     }
 
