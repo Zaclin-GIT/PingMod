@@ -23,6 +23,7 @@ public class PingMod : BaseUnityPlugin
     private float pingLifetime = 10f;
     public Vector2 imageSize = new Vector2(0.25f, 0.25f);
     public int PingResolution = 1024;
+    public Sprite? cachedPingSprite;
     public static NetworkedEvent? PingEvent;
     private int pingOverlayLayer = 31;
     private GameObject? overlayCameraObj;
@@ -30,7 +31,7 @@ public class PingMod : BaseUnityPlugin
     private bool onCoolDown = false;
     public Color pingColor = Color.white;
 
-    public Dictionary<String, Sprite> cachedPingSprite = new Dictionary<String, Sprite>();
+
     private readonly Queue<PingData> _pingQueue = new Queue<PingData>();
 
     private void Awake()
@@ -49,7 +50,7 @@ public class PingMod : BaseUnityPlugin
         this.gameObject.transform.parent = null;
         this.gameObject.hideFlags = HideFlags.HideAndDontSave;
 
-        this.cachedPingSprite.Add(Color.black.ToString(), CreateLocationSprite());
+        this.cachedPingSprite = CreateLocationSprite();
 
         Patch();
 
@@ -142,7 +143,8 @@ public class PingMod : BaseUnityPlugin
                     GameObject canvasObj = new GameObject("PingObject");
                     canvasObj.layer = this.pingOverlayLayer;
                     canvasObj.transform.position = data.position;
-                    this.CreatePing(canvasObj, data.color);
+                    this.UpdateLocationSpriteColor(data.color);
+                    this.CreatePing(canvasObj);
                     Destroy(canvasObj, pingLifetime);
                 }
             }
@@ -169,7 +171,7 @@ public class PingMod : BaseUnityPlugin
         Camera.main.cullingMask &= ~(1 << this.pingOverlayLayer);
     }
 
-    private void CreatePing(GameObject canvasObj, Color color)
+    private void CreatePing(GameObject canvasObj)
     {
         // Add Canvas
         Canvas canvas = canvasObj.AddComponent<Canvas>();
@@ -187,7 +189,7 @@ public class PingMod : BaseUnityPlugin
 
         // Add Image component and assign generated sprite
         UnityEngine.UI.Image image = imageObj.AddComponent<UnityEngine.UI.Image>();
-        image.sprite = this.cachedPingSprite[color.ToString()]; //CreateLocationSprite(); // Generate a location icon
+        image.sprite = this.cachedPingSprite;//CreateLocationSprite(); // Generate a location icon
         image.transform.position = canvasObj.transform.position;
         image.rectTransform.sizeDelta = imageSize;
 
@@ -196,12 +198,12 @@ public class PingMod : BaseUnityPlugin
     }
 
 
-    public Sprite LocationSpriteCopy(Color newColor)
+    public void UpdateLocationSpriteColor(Color newColor)
     {
-        int width = this.cachedPingSprite[Color.black.ToString()].texture.width;
-        int height = this.cachedPingSprite[Color.black.ToString()].texture.height;
-        Texture2D texture = new Texture2D(width, height); //cachedPingSprite.texture; // Get the texture from the sprite
-        Color[] pixels = this.cachedPingSprite[Color.black.ToString()].texture.GetPixels(); // Get all pixels
+        if (cachedPingSprite == null) return; // Ensure the sprite exists
+
+        Texture2D texture = cachedPingSprite.texture; // Get the texture from the sprite
+        Color[] pixels = texture.GetPixels(); // Get all pixels
 
         for (int i = 0; i < pixels.Length; i++)
         {
@@ -213,7 +215,6 @@ public class PingMod : BaseUnityPlugin
 
         texture.SetPixels(pixels); // Apply new colors
         texture.Apply(); // Update texture on GPU
-        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 
     public Sprite CreateLocationSprite()
@@ -222,7 +223,7 @@ public class PingMod : BaseUnityPlugin
         int height = this.PingResolution;
         Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
         Color transparent = new Color(0, 0, 0, 0);
-        Color fillColor = Color.black;
+        Color fillColor = this.pingColor;
         Color outlineColor = Color.white;
 
         // Clear texture
@@ -396,10 +397,7 @@ public class PingMod : BaseUnityPlugin
             if (___isLocal)
             {
                 plugin.pingColor = __instance.playerAvatarVisuals.color;
-                if (!plugin.cachedPingSprite.ContainsKey(plugin.pingColor.ToString()))
-                {
-                    plugin.cachedPingSprite.Add(plugin.pingColor.ToString(), plugin.LocationSpriteCopy(plugin.pingColor));
-                }
+                plugin.cachedPingSprite = plugin.CreateLocationSprite();
             }
         }
     }
