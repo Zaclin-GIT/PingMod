@@ -172,7 +172,7 @@ public class PingMod : BaseUnityPlugin
         int centerY = (int)(height * 0.65f);
         int outerRadius = (int)(width * 0.25f);
         int innerRadius = (int)(outerRadius * 0.4f);
-        int outlineThickness = 3;
+        int outlineThickness = 5;
 
         // Draw Circle with Outline
         for (int x = centerX - outerRadius - outlineThickness; x <= centerX + outerRadius + outlineThickness; x++)
@@ -326,12 +326,15 @@ public class PingMod : BaseUnityPlugin
 
         }
 
-        [HarmonyPatch(typeof(PlayerAvatarVisuals), "SetColor")]
+        [HarmonyPatch(typeof(PlayerAvatar), "SetColorRPC")]
         [HarmonyPostfix]
-        public static void SetColor(PlayerAvatarVisuals __instance, int _colorIndex, Color _setColor)
+        public static void SetColor(int colorIndex, ref bool ___isLocal, PlayerAvatar __instance)
         {
-            plugin.pingColor = __instance.color;
-            plugin.cachedPingSprite = plugin.CreateLocationSprite();
+            if (___isLocal)
+            {
+                plugin.pingColor = __instance.playerAvatarVisuals.color;
+                plugin.cachedPingSprite = plugin.CreateLocationSprite();
+            }
         }
     }
 
