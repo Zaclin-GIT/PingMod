@@ -172,7 +172,7 @@ public class PingMod : BaseUnityPlugin
         int centerY = (int)(height * 0.65f);
         int outerRadius = (int)(width * 0.25f);
         int innerRadius = (int)(outerRadius * 0.4f);
-        int outlineThickness = 5;
+        int outlineThickness = 10;
 
         // Draw Circle with Outline
         for (int x = centerX - outerRadius - outlineThickness; x <= centerX + outerRadius + outlineThickness; x++)
