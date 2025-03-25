@@ -32,7 +32,7 @@ public class PingMod : BaseUnityPlugin
     public Color pingColor = Color.white;
 
 
-    private readonly Queue<Vector3> _pingQueue = new Queue<Vector3>();
+    private readonly Queue<PingData> _pingQueue = new Queue<PingData>();
 
     private void Awake()
     {
@@ -94,11 +94,12 @@ public class PingMod : BaseUnityPlugin
             {
                 while (_pingQueue.Count > 0)
                 {
-                    Vector3 position = _pingQueue.Dequeue();
+                    PingData data = _pingQueue.Dequeue();
 
                     GameObject canvasObj = new GameObject("PingObject");
                     canvasObj.layer = this.pingOverlayLayer;
-                    canvasObj.transform.position = position;
+                    canvasObj.transform.position = data.position;
+                    this.UpdateLocationSpriteColor(data.color);
                     this.CreatePing(canvasObj);
                     Destroy(canvasObj, pingLifetime);
                 }
@@ -152,6 +153,25 @@ public class PingMod : BaseUnityPlugin
         canvasObj.AddComponent<Billboard>();
     }
 
+
+    public void UpdateLocationSpriteColor(Color newColor)
+    {
+        if (cachedPingSprite == null) return; // Ensure the sprite exists
+
+        Texture2D texture = cachedPingSprite.texture; // Get the texture from the sprite
+        Color[] pixels = texture.GetPixels(); // Get all pixels
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            if (pixels[i].a > 0 && pixels[i] != Color.white) // Only change non-transparent pixels
+            {
+                pixels[i] = newColor;
+            }
+        }
+
+        texture.SetPixels(pixels); // Apply new colors
+        texture.Apply(); // Update texture on GPU
+    }
 
     public Sprite CreateLocationSprite()
     {
@@ -264,12 +284,12 @@ public class PingMod : BaseUnityPlugin
             return;
         }
 
-        Vector3 position = (Vector3)eventData.CustomData;
+        PingData data = (PingData)eventData.CustomData;
 
 
         lock (_pingQueue)
         {
-            _pingQueue.Enqueue(position);
+            _pingQueue.Enqueue(data);
         }
     }
 
@@ -290,7 +310,7 @@ public class PingMod : BaseUnityPlugin
             if (PingEvent == null)
                 Logger.LogError("Ping Event Network Event is null");
             else
-                PingEvent.RaiseEvent(spawnPosition, REPOLib.Modules.NetworkingEvents.RaiseAll, SendOptions.SendReliable);
+                PingEvent.RaiseEvent(new PingData(spawnPosition, this.pingColor), REPOLib.Modules.NetworkingEvents.RaiseAll, SendOptions.SendReliable);
             return true;
         }
         else
@@ -299,6 +319,18 @@ public class PingMod : BaseUnityPlugin
         }
         return false;
     }
+
+    class PingData
+    {
+        public PingData(Vector3 pos, Color color)
+        {
+            this.position = pos;
+            this.color = color;
+        }
+        public Vector3 position;
+        public Color color;
+    }
+
 
     [HarmonyPatch]
     public static class PlayerPatcher
