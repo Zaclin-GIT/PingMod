@@ -320,7 +320,7 @@ public class PingMod : BaseUnityPlugin
         return false;
     }
 
-    class PingData
+    struct PingData
     {
         public PingData(Vector3 pos, Color color)
         {
