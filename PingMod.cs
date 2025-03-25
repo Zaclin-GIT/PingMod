@@ -319,7 +319,7 @@ public class PingMod : BaseUnityPlugin
         return false;
     }
     [System.Serializable]
-    struct PingData
+    public class PingData
     {
         public PingData(Vector3 pos, Color color)
         {
