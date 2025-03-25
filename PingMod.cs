@@ -39,6 +39,12 @@ public class PingMod : BaseUnityPlugin
         Instance = this;
         PlayerPatcher.plugin = Instance;
 
+        if (!PhotonPeer.RegisterType(typeof(PingData), 0xF1, SerializePingData, DeserializePingData))
+        {
+            Logger.LogError("Failed to register PingData type!");
+        }
+
+
         PingEvent = new NetworkedEvent("Global Ping Event", this.EmitPing);
         // Prevent the plugin from being deleted
         this.gameObject.transform.parent = null;
@@ -50,6 +56,44 @@ public class PingMod : BaseUnityPlugin
 
         Logger.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
     }
+
+
+    public static byte[] SerializePingData(object customobject)
+    {
+        PingData ping = (PingData)customobject;
+        // 3 floats for position (3*4 = 12 bytes), 4 floats for color (4*4 = 16 bytes): total 28 bytes
+        byte[] bytes = new byte[28];
+        int offset = 0;
+
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.position.x), 0, bytes, offset, 4); offset += 4;
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.position.y), 0, bytes, offset, 4); offset += 4;
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.position.z), 0, bytes, offset, 4); offset += 4;
+
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.color.r), 0, bytes, offset, 4); offset += 4;
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.color.g), 0, bytes, offset, 4); offset += 4;
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.color.b), 0, bytes, offset, 4); offset += 4;
+        Buffer.BlockCopy(BitConverter.GetBytes(ping.color.a), 0, bytes, offset, 4); offset += 4;
+
+        return bytes;
+    }
+
+    public static object DeserializePingData(byte[] data)
+    {
+        PingData ping = new PingData();
+        int offset = 0;
+
+        ping.position.x = BitConverter.ToSingle(data, offset); offset += 4;
+        ping.position.y = BitConverter.ToSingle(data, offset); offset += 4;
+        ping.position.z = BitConverter.ToSingle(data, offset); offset += 4;
+
+        ping.color.r = BitConverter.ToSingle(data, offset); offset += 4;
+        ping.color.g = BitConverter.ToSingle(data, offset); offset += 4;
+        ping.color.b = BitConverter.ToSingle(data, offset); offset += 4;
+        ping.color.a = BitConverter.ToSingle(data, offset); offset += 4;
+
+        return ping;
+    }
+
 
     private void Start()
     {
@@ -318,17 +362,6 @@ public class PingMod : BaseUnityPlugin
         }
         return false;
     }
-    [System.Serializable]
-    public class PingData
-    {
-        public PingData(Vector3 pos, Color color)
-        {
-            this.position = pos;
-            this.color = color;
-        }
-        public Vector3 position;
-        public Color color;
-    }
 
 
     [HarmonyPatch]
@@ -367,6 +400,23 @@ public class PingMod : BaseUnityPlugin
                 plugin.cachedPingSprite = plugin.CreateLocationSprite();
             }
         }
+    }
+
+
+    [System.Serializable]
+    public class PingData
+    {
+        public Vector3 position;
+        public Color color;
+
+        public PingData(Vector3 pos, Color color)
+        {
+            this.position = pos;
+            this.color = color;
+        }
+
+        // Parameterless constructor needed for deserialization
+        public PingData() { }
     }
 
 }
