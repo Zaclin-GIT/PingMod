@@ -143,8 +143,7 @@ public class PingMod : BaseUnityPlugin
                     GameObject canvasObj = new GameObject("PingObject");
                     canvasObj.layer = this.pingOverlayLayer;
                     canvasObj.transform.position = data.position;
-                    this.UpdateLocationSpriteColor(data.color);
-                    this.CreatePing(canvasObj);
+                    this.CreatePing(canvasObj, data.color);
                     Destroy(canvasObj, pingLifetime);
                 }
             }
@@ -171,7 +170,7 @@ public class PingMod : BaseUnityPlugin
         Camera.main.cullingMask &= ~(1 << this.pingOverlayLayer);
     }
 
-    private void CreatePing(GameObject canvasObj)
+    private void CreatePing(GameObject canvasObj, Color color)
     {
         // Add Canvas
         Canvas canvas = canvasObj.AddComponent<Canvas>();
@@ -187,35 +186,20 @@ public class PingMod : BaseUnityPlugin
         GameObject imageObj = new GameObject("PingImage");
         imageObj.transform.SetParent(canvasObj.transform);
 
+
         // Add Image component and assign generated sprite
         UnityEngine.UI.Image image = imageObj.AddComponent<UnityEngine.UI.Image>();
         image.sprite = this.cachedPingSprite;//CreateLocationSprite(); // Generate a location icon
         image.transform.position = canvasObj.transform.position;
         image.rectTransform.sizeDelta = imageSize;
 
+        CanvasRenderer canvasRenderer = imageObj.GetComponent<CanvasRenderer>();
+        canvasRenderer.SetColor(color);
+
         // Billboard effect
         canvasObj.AddComponent<Billboard>();
     }
 
-
-    public void UpdateLocationSpriteColor(Color newColor)
-    {
-        if (cachedPingSprite == null) return; // Ensure the sprite exists
-
-        Texture2D texture = cachedPingSprite.texture; // Get the texture from the sprite
-        Color[] pixels = texture.GetPixels(); // Get all pixels
-
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            if (pixels[i].a > 0 && pixels[i] != Color.white) // Only change non-transparent pixels
-            {
-                pixels[i] = newColor;
-            }
-        }
-
-        texture.SetPixels(pixels); // Apply new colors
-        texture.Apply(); // Update texture on GPU
-    }
 
     public Sprite CreateLocationSprite()
     {
@@ -223,7 +207,7 @@ public class PingMod : BaseUnityPlugin
         int height = this.PingResolution;
         Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
         Color transparent = new Color(0, 0, 0, 0);
-        Color fillColor = this.pingColor;
+        Color fillColor = Color.white;
         Color outlineColor = Color.white;
 
         // Clear texture
