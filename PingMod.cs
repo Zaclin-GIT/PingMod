@@ -179,22 +179,27 @@ public class PingMod : BaseUnityPlugin
 
         CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
         scaler.dynamicPixelsPerUnit = 10;
-
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        // Create an Image object
+        // Create a background outline image
+        GameObject outlineObj = new GameObject("PingOutline");
+        outlineObj.transform.SetParent(canvasObj.transform);
+        outlineObj.transform.position = canvasObj.transform.position;
+
+        UnityEngine.UI.Image outline = outlineObj.AddComponent<UnityEngine.UI.Image>();
+        outline.sprite = this.cachedPingSprite;
+        outline.color = Color.white; // Outline color
+        outline.rectTransform.sizeDelta = imageSize * 1.1f; // Slightly larger for outline
+
+        // Create the actual ping image
         GameObject imageObj = new GameObject("PingImage");
         imageObj.transform.SetParent(canvasObj.transform);
+        imageObj.transform.position = canvasObj.transform.position;
 
-
-        // Add Image component and assign generated sprite
         UnityEngine.UI.Image image = imageObj.AddComponent<UnityEngine.UI.Image>();
-        image.sprite = this.cachedPingSprite;//CreateLocationSprite(); // Generate a location icon
-        image.transform.position = canvasObj.transform.position;
+        image.sprite = this.cachedPingSprite;
         image.rectTransform.sizeDelta = imageSize;
-
-        CanvasRenderer canvasRenderer = imageObj.GetComponent<CanvasRenderer>();
-        canvasRenderer.SetColor(color);
+        image.color = color; // Actual ping color
 
         // Billboard effect
         canvasObj.AddComponent<Billboard>();
