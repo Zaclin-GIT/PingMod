@@ -32,7 +32,7 @@ public class PingMod : BaseUnityPlugin
     public Color pingColor = Color.white;
 
 
-    private readonly Queue<PingData> _pingQueue = new Queue<PingData>();
+    private readonly Queue<(Vector3 position, Color color)> _pingQueue = new Queue<(Vector3 position, Color color)>();
 
     private void Awake()
     {
@@ -94,7 +94,7 @@ public class PingMod : BaseUnityPlugin
             {
                 while (_pingQueue.Count > 0)
                 {
-                    PingData data = _pingQueue.Dequeue();
+                    (Vector3 position, Color color) data = _pingQueue.Dequeue();
 
                     GameObject canvasObj = new GameObject("PingObject");
                     canvasObj.layer = this.pingOverlayLayer;
@@ -284,8 +284,7 @@ public class PingMod : BaseUnityPlugin
             return;
         }
 
-        PingData data = (PingData)eventData.CustomData;
-
+        (Vector3 position, Color color) data = ((Vector3 position, Color color))eventData.CustomData;
 
         lock (_pingQueue)
         {
@@ -310,7 +309,7 @@ public class PingMod : BaseUnityPlugin
             if (PingEvent == null)
                 Logger.LogError("Ping Event Network Event is null");
             else
-                PingEvent.RaiseEvent(new PingData(spawnPosition, this.pingColor), REPOLib.Modules.NetworkingEvents.RaiseAll, SendOptions.SendReliable);
+                PingEvent.RaiseEvent((spawnPosition, this.pingColor), REPOLib.Modules.NetworkingEvents.RaiseAll, SendOptions.SendReliable);
             return true;
         }
         else
